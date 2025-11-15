@@ -45,5 +45,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner | toLower }}/mlops-rare-disease:latest
-            ghcr.io/${{ github.repository_owner | toLower }}/mlops-rare-disease:${{ github.sha }}
+            ghcr.io/danielgm93/mlops-rare-disease:latest
+            ghcr.io/danielgm93/mlops-rare-disease:${{ github.sha }}
