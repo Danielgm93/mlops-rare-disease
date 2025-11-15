@@ -4,6 +4,11 @@
 - **Repositorio:** [mlops-rare-disease](https://github.com/Danielgm93/mlops-rare-disease)
 
 
+- **Autor:** Daniel Alejandro García Moncada  
+- **Curso:** MLOps – Semanas 3–4: Repo en GitHub + GitHub Actions  
+- **Repositorio:** [mlops-rare-disease](https://github.com/Danielgm93/mlops-rare-disease)
+
+
 Este repositorio implementa un **servicio de triage para una enfermedad rara** usando FastAPI pensado como ejercicio de **MLOps** para practicar:
 
 - Estructura de servicio y “modelo” desacoplado (`model/rules.py`).
