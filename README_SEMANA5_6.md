@@ -77,30 +77,36 @@ El pipeline MLOps propuesto debe permitir:
 
 ```mermaid
 flowchart LR
-    subgraph Datos
-        A[EHR / HCE] --> B[Ingesta batch<br/>Python + Airflow]
-        B --> C[Data Lake / DW<br/>Parquet + SQL]
-    end
+  subgraph Datos
+    A[EHR / HCE]
+    B[Ingesta batch\nPython + Airflow]
+    C[Data Lake / DW\nParquet + SQL]
+    A --> B --> C
+  end
 
-    subgraph Offline (ML)
-        C --> D[Preprocesamiento<br/>pandas + sklearn]
-        D --> E[Entrenamiento & tuning<br/>Modelos tabulares]
-        E --> F[Evaluación<br/>ROC-AUC, F1, PR-AUC]
-        F --> G[Registro de modelo<br/>MLflow Model Registry]
-        G --> H[Exportación a ONNX<br/>subida a bucket]
-    end
+  subgraph Offline_ML
+    D[Preprocesamiento\npandas + sklearn]
+    E[Entrenamiento & tuning\nModelos tabulares]
+    F[Evaluación\nROC-AUC, F1, PR-AUC]
+    G[Registro de modelo\nMLflow Model Registry]
+    H[Exportación a ONNX\nSubida a bucket]
+    C --> D --> E --> F --> G --> H
+  end
 
-    subgraph Online (Serving)
-        H --> I[Inferencia<br/>FastAPI + Docker + ONNXRuntime]
-        I --> J[(Médico / HCE)]
-    end
+  subgraph Online_Serving
+    I[Inferencia\nFastAPI + Docker + ONNXRuntime]
+    J[(Médico / HCE)]
+    H --> I --> J
+  end
 
-    subgraph Ops (MLOps)
-        K[GitHub Actions<br/>CI: tests<br/>CD: build + deploy] --> I
-        I --> L[Monitoring<br/>logs + métricas]
-        L --> M[Retraining<br/>Airflow / Scripts]
-        M --> D
-    end
+  subgraph Ops_MLOps
+    K[GitHub Actions\nCI: tests\nCD: build + deploy]
+    L[Monitoring\nlogs + métricas]
+    M[Retraining\nAirflow / scripts]
+    K --> I
+    I --> L --> M --> D
+  end
+
 ```
 
 ---
