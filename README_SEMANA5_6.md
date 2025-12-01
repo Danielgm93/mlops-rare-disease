@@ -1,7 +1,9 @@
 Rare Disease Triage – Pipeline MLOps (Reestructuración Semanas 5–6)
 
 Autor: D. W
+
 Curso: MLOps – Semanas 5–6
+
 Repositorio: https://github.com/Danielgm93/Enfermedades-mlops-U2
 
 Este repositorio describe un pipeline MLOps end-to-end para un sistema de triage clínico que estima la probabilidad de que un paciente presente una enfermedad común o una enfermedad huérfana, a partir de síntomas y variables clínicas básicas. Esta propuesta corresponde a la reestructuración solicitada en las semanas 5–6 del curso.
@@ -9,6 +11,7 @@ Este repositorio describe un pipeline MLOps end-to-end para un sistema de triage
 La reestructuración incorpora los principios de MLOps vistos en todas las unidades, retomando la propuesta inicial (Semanas 1–2) y elevándola a un diseño completo, explícito y listo para ser implementado por un equipo de ML.
 
 1. Problema y Alcance
+   
 1.1 Descripción del problema
 
 Los sistemas de salud registran grandes volúmenes de datos para enfermedades frecuentes, pero la disponibilidad de datos para enfermedades huérfanas es limitada. El objetivo es desarrollar un modelo capaz de:
@@ -19,6 +22,7 @@ Identificar posibles casos compatibles con enfermedades huérfanas, priorizando 
 El sistema es una herramienta de apoyo al triage médico, no un sistema diagnóstico.
 
 1.2 Objetivo del pipeline MLOps
+
 El pipeline debe permitir:
 Transformar datos clínicos crudos en modelos entrenados, versionados y auditables.
 Exportar los modelos finales a formato ONNX para ejecución eficiente.
@@ -27,6 +31,7 @@ Implementar CI/CD con pruebas automáticas y despliegue controlado.
 Monitorear el comportamiento del modelo en producción y activar ciclos de reentrenamiento cuando sea necesario.
 
 2. Suposiciones, Restricciones e Implicaciones
+   
 2.1 Suposiciones generales
 Existe acceso controlado a datos anonimizados de historias clínicas electrónicas (EHR/HCE).
 El entrenamiento del modelo se realiza en un entorno offline y batch.
@@ -44,6 +49,7 @@ El modelo final debe ser entregado en formato ONNX.
 Los pipelines deben estar separados en entrenamiento (offline) e inferencia (online).
 El almacenamiento externo obliga a usar un mecanismo de descarga confiable desde la API.
 El uso de ONNX limita algunas arquitecturas pero mejora portabilidad y eficiencia.
+
 ---
 
 ## 3. Arquitectura general
