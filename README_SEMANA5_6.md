@@ -1,126 +1,49 @@
-# Rare Disease Triage – Pipeline MLOps (Reestructuración Semanas 5–6)
+Rare Disease Triage – Pipeline MLOps (Reestructuración Semanas 5–6)
 
-- **Autor:** D W
-- **Curso:** MLOps – Semanas 5–6: Pipeline de MLOps (Reestructuración)
-- **Repositorio:** https://github.com/Danielgm93/mlops-rare-disease
+Autor: D. W
+Curso: MLOps – Semanas 5–6
+Repositorio: https://github.com/Danielgm93/mlops-rare-disease
 
-Este repositorio describe un **pipeline MLOps end-to-end** para un sistema de **triage de enfermedades** (comunes y huérfanas) a partir de síntomas y datos clínicos de pacientes.
+Este repositorio describe un pipeline MLOps end-to-end para un sistema de triage clínico que estima la probabilidad de que un paciente presente una enfermedad común o una enfermedad huérfana, a partir de síntomas y variables clínicas básicas. Esta propuesta corresponde a la reestructuración solicitada en las semanas 5–6 del curso.
 
-La reestructuración de Semanas 5–6 tiene como propósito:
+La reestructuración incorpora los principios de MLOps vistos en todas las unidades, retomando la propuesta inicial (Semanas 1–2) y elevándola a un diseño completo, explícito y listo para ser implementado por un equipo de ML.
 
-- Retomar la propuesta inicial de las Semanas 1–2.
-- Incorporar los conceptos de MLOps vistos durante el curso.
-- Definir un proceso **end-to-end** suficientemente detallado para que un equipo de ML pueda implementarlo.
-- Alinear el diseño con:
-  - El código actual del repositorio (FastAPI + Docker + CI/CD).
-  - Los requisitos del **proyecto final** (modelos ONNX, descarga desde bucket, despliegue automático en dev/prod).
+1. Problema y Alcance
+1.1 Descripción del problema
 
----
+Los sistemas de salud registran grandes volúmenes de datos para enfermedades frecuentes, pero la disponibilidad de datos para enfermedades huérfanas es limitada. El objetivo es desarrollar un modelo capaz de:
 
-## 1. Problema y alcance
+Determinar si un paciente no presenta indicios relevantes.
+Detectar posibles enfermedades comunes (leve, aguda o crónica).
+Identificar posibles casos compatibles con enfermedades huérfanas, priorizando alta sensibilidad.
+El sistema es una herramienta de apoyo al triage médico, no un sistema diagnóstico.
 
-### 1.1 Descripción del problema
+1.2 Objetivo del pipeline MLOps
+El pipeline debe permitir:
+Transformar datos clínicos crudos en modelos entrenados, versionados y auditables.
+Exportar los modelos finales a formato ONNX para ejecución eficiente.
+Servir el modelo vía API en entorno local o en la nube.
+Implementar CI/CD con pruebas automáticas y despliegue controlado.
+Monitorear el comportamiento del modelo en producción y activar ciclos de reentrenamiento cuando sea necesario.
 
-En el contexto médico:
+2. Suposiciones, Restricciones e Implicaciones
+2.1 Suposiciones generales
+Existe acceso controlado a datos anonimizados de historias clínicas electrónicas (EHR/HCE).
+El entrenamiento del modelo se realiza en un entorno offline y batch.
+El servicio de inferencia corre en un contenedor Docker.
+Los modelos versionados se almacenan en un bucket externo.
+FastAPI es utilizado como servidor de inferencia.
 
-- Para **enfermedades comunes**, suelen existir grandes volúmenes de datos históricos (registros EHR/HCE).
-- Para **enfermedades huérfanas** o de baja prevalencia, los datos son escasos y desbalanceados.
+2.2 Restricciones
+Cumplimiento de normas de privacidad y ética médica.
+Manejo de desbalance extremo por enfermedades huérfanas.
+Debe funcionar localmente o como servicio remoto.
+El modelo final debe ser entregado en formato ONNX.
 
-Se requiere un sistema que, dado un vector de síntomas y variables clínicas básicas de un paciente, estime si:
-
-- No presenta indicios relevantes de enfermedad.
-- Puede estar cursando una enfermedad de tipo **leve/aguda/crónica**.
-- Puede estar ante un cuadro compatible con una **enfermedad huérfana**, donde la prioridad es no dejar pasar casos de riesgo (alta sensibilidad).
-
-El sistema se concibe como **herramienta de triage y priorización**, no como sustituto del diagnóstico médico.
-
-### 1.2 Objetivo del pipeline MLOps
-
-El pipeline MLOps propuesto debe permitir:
-
-1. Ir desde **datos clínicos crudos** hasta modelos entrenados, versionados, auditables y exportados a **ONNX**.
-2. Desplegar estos modelos como **servicios web** accesibles para los médicos:
-   - En un **computador local** (contenedor ligero, sin dependencia de la nube si los recursos lo permiten).
-   - En un **servidor o servicio en la nube**, accesible vía HTTP/HTTPS.
-3. Incorporar prácticas MLOps para:
-   - Versionado de **datos**, **modelos** y **código**.
-   - Integración y despliegue continuo (**CI/CD** con GitHub Actions).
-   - Monitoreo del servicio y del modelo, y ciclo de **reentrenamiento**.
-   - 
-4. CI/CD y GitHub Actions
-
-El pipeline de integración y despliegue continuo (CI/CD) está implementado usando **GitHub Actions** para garantizar que el código se pruebe automáticamente y se despliegue sin errores.
-
-Flujo de trabajo con GitHub Actions, el cual se ha configurado para automatizar las pruebas y el despliegue del proyecto:
-
-- Evento PR (Pull Request)**:
-   - Cuando se crea un pull request hacia la rama `main`, GitHub Actions ejecuta automáticamente pruebas unitarias para verificar que el código no rompa funcionalidades existentes. Este proceso está definido en el archivo de flujo de trabajo **`pr-ci.yml`** dentro de la carpeta **`.github/workflows/`**.
-   - Un mensaje automático como **"CI/CD en acción. Ejecutando tareas..."** se publica en el PR, lo que indica que el pipeline ha comenzado.
-
-- Evento Commit (Push)**:
-   - Cuando se hace un **commit** directamente a la rama `main`, se ejecutan las pruebas unitarias nuevamente para asegurarse de que el código sigue funcionando correctamente. Además, se construye una imagen Docker con la versión más reciente del modelo y se sube al **GitHub Container Registry (GHCR)**.
-   - Al final de este proceso, se publica el mensaje **"CI/CD terminado con éxito."** en el PR para indicar que el proceso ha terminado sin errores.
-
-- Archivos clave de GitHub Actions:
-
-- **pr-ci.yml**: Ejecuta las pruebas unitarias en cada PR.
-- **develop-cicd.yml**: Ejecuta las pruebas y despliega la imagen Docker a **GHCR**.
-
-Con esta integración, se asegura que cualquier cambio realizado en el código pase por un proceso de validación automático antes de ser fusionado en la rama principal.
-
-#### 1.4 Monitoreo y Reentrenamiento
-
-El monitoreo continuo es esencial para asegurar que el modelo de predicción siga siendo relevante con el tiempo. 
-
-1. **Monitoreo de Drift**:  
-   El modelo se monitorea para detectar **drift de datos**, lo que indica que la distribución de las predicciones ha cambiado debido a nuevos patrones en los datos.
-
-2. **Logging de Predicciones**:  
-   Todas las predicciones realizadas por el modelo se registran en archivos de texto (**`predicciones_dev.txt`**, **`predicciones_prod.txt`**), que se almacenan en un bucket externo. Estos logs ayudan a monitorear el desempeño del modelo a lo largo del tiempo y detectar cualquier irregularidad.
-
-3. **Ciclo de Reentrenamiento**:  
-   Si se detecta drift en el modelo o si los datos se actualizan significativamente, el modelo pasa por un proceso de **reentrenamiento**. Esto incluye:
-   - Recolectar los nuevos datos etiquetados.
-   - Reentrenar el modelo con estos datos.
-   - Validar que las métricas del modelo estén por encima de los umbrales definidos (por ejemplo, ROC-AUC > 0.85).
-   - Subir la nueva versión del modelo al bucket externo.
-
- ##### 1.5 Tecnologías Usadas
-
-Este proyecto utiliza diversas tecnologías para cada etapa del pipeline, lo que permite construir un sistema robusto y escalable:
-
-- **FastAPI**: Para implementar la API de inferencia. Es rápido y eficiente para construir servicios web ligeros que se pueden ejecutar localmente o en la nube.
-- **Docker**: Se utiliza para contenerizar la API y permitir su ejecución en cualquier entorno, ya sea local o en un servidor/nube. Docker facilita el despliegue y la portabilidad del sistema.
-- **ONNX**: El modelo de predicción es exportado en formato **ONNX** para asegurar la compatibilidad con diferentes runtimes de inferencia.
-- **GitHub Actions**: Para la integración continua (CI) y el despliegue continuo (CD). Estas acciones automatizan las pruebas, construcción de Docker y despliegue de imágenes.
-- **Airflow**: Se usa para orquestar la ingesta de datos desde las Historias Clínicas Electrónicas (HCE/EHR) hacia el sistema, gestionando flujos batch de datos.
-
-Cada una de estas tecnologías ha sido elegida por su eficiencia, escalabilidad y capacidad de integración en un pipeline MLOps robusto.
-
----
-
-## 2. Suposiciones y restricciones
-
-### 2.1 Suposiciones
-
-- Existe una **Historia Clínica Electrónica (HCE/EHR)** con acceso controlado a datos clínicos anonimizados.
-- El entrenamiento del modelo se realiza en un entorno **offline**.
-- El modelo se ejecuta como servicio dentro de un **contenedor Docker**.
-- Los modelos entrenados se almacenan en un **bucket externo**, no dentro del repositorio.
-- FastAPI es la tecnología de inferencia.
-
-### 2.2 Restricciones
-
-- Requisitos de **privacidad y ética médica**.
-- Manejo de **desbalance extremo** por enfermedades huérfanas.
-- Soporte para ejecución **local o en la nube**.
-
-### 2.3 Implicaciones
-
-- Separación clara entre pipeline offline (entrenamiento) y online (serving).
-- Uso obligatorio de modelos **ONNX**.
-- Todos los artefactos versionados fuera del repositorio.
-
+2.3 Implicaciones por etapa
+Los pipelines deben estar separados en entrenamiento (offline) e inferencia (online).
+El almacenamiento externo obliga a usar un mecanismo de descarga confiable desde la API.
+El uso de ONNX limita algunas arquitecturas pero mejora portabilidad y eficiencia.
 ---
 
 ## 3. Arquitectura general
@@ -160,100 +83,137 @@ flowchart LR
 ```
 
 ---
+3. Diagrama General del Pipeline (versión textual)
 
-## 4. Etapas del pipeline end-to-end
+El diagrama debe incluir este flujo general, que corresponde a la arquitectura solicitada:
+Ingesta de Datos →
+Anonimización y Validación →
+Almacenamiento en Data Lake →
+Preprocesamiento y Feature Engineering →
+Manejo de Desbalance →
+Entrenamiento del Modelo →
+Validación y Métricas →
+Registro en MLflow →
+Exportación a ONNX →
+Almacenamiento del modelo en Bucket Externo →
+Construcción de Imagen Docker →
+CI/CD con GitHub Actions →
+Despliegue (local o nube) →
+Monitoreo de predicciones →
+Detección de drift →
+Reentrenamiento y ciclo iterativo.
 
-### 4.1 Ingesta y gobierno de datos
+4. Etapas del Pipeline End-to-End (con justificación y suposiciones por etapa)
+4.1 Ingesta y Gobierno de Datos
 
-Incluye extracción desde EHR, anonimización, validación, carga a Data Lake y DW.  
-Tecnologías: **Airflow**, **pandas**, **Parquet**, **SQL**, **S3/GCS/Azure**.
+Incluye extracción periódica desde EHR, anonimización y validación de integridad.
+Tecnologías: Airflow, pandas, Parquet, SQL, S3/GCS/Azure.
 
-### 4.2 Preprocesamiento y feature engineering
+Justificación: Airflow permite orquestación batch, dependencias, DAG reproducibles y manejo estable de flujos clínicos.
+Suposición: El acceso a EHR es batch, no streaming.
+Implicación: El pipeline no requiere servicios de baja latencia.
 
-Incluye validación de esquema, manejo de outliers, encoding, escalado, features clínicas.  
-Tecnologías: `sklearn.Pipeline`, `ColumnTransformer`.
+4.2 Preprocesamiento y Feature Engineering
 
-### 4.3 Manejo de desbalance y modelado
+Incluye limpieza de variables clínicas, validación de esquema, escalado, encoding y construcción de features.
 
-Técnicas: oversampling, class weights, enfoque de dos etapas, ajuste de umbrales.  
-Modelos típicos: Logistic Regression, RandomForest, XGBoost.
+Tecnologías: sklearn.Pipeline, ColumnTransformer.
 
-### 4.4 Entrenamiento y validación
+Justificación: sklearn permite estructurar transformaciones reproducibles y exportables. ColumnTransformer permite aplicar transformaciones por tipo de variable.
+Suposición: Las variables clínicas están estandarizadas.
+Implicación: No se requiere procesamiento semántico adicional.
 
-Validación: StratifiedKFold, temporal split, evaluación por subgrupos.  
-Métricas: ROC-AUC, F1, PR-AUC, recall para clases raras.
+4.3 Manejo de Desbalance y Modelado
 
-### 4.5 Registro y exportación a ONNX
+Aplicación de oversampling, class weights o pipelines de dos etapas para mejorar sensibilidad en clases raras.
 
-- MLflow Tracking + Model Registry.
-- Exportación a ONNX (`skl2onnx`).
-- Almacenamiento en bucket externo.
+Modelos recomendados: Logistic Regression, RandomForest, XGBoost.
 
-### 4.6 Servicio de inferencia (FastAPI + Docker)
+Justificación: Son modelos robustos, interpretables y compatibles con exportación a ONNX. XGBoost es adecuado para relaciones no lineales.
+Suposición: El oversampling no modifica en exceso la distribución clínica.
+Implicación: Se debe monitorear el recall en clases huérfanas.
 
-- Descarga de modelo ONNX desde bucket.
-- Inferencia con `ONNXRuntime`.
-- Logging obligatorio de predicciones en TXT:
-  - `predicciones_dev.txt`
-  - `predicciones_prod.txt`
+4.4 Entrenamiento y Validación
 
-### 4.7 CI/CD y MLOps
+Validación cruzada como StratifiedKFold o separación temporal.
 
-- GitHub Actions:
+Métricas clave: ROC-AUC, PR-AUC, F1, recall para clases raras.
 
-  - **Test stage**:
-    - descarga de modelo ONNX
-    - descarga de datos de prueba
-    - pruebas: inferencia + métrica mínima
-  - **Build/Promote stage**:
-    - construcción de imagen Docker
-    - push a GHCR
-    - despliegue a dev o prod
+Justificación: Las métricas deben medir desempeño global y sensibilidad en clases de muy baja prevalencia.
+Suposición: Los datos tienen marcas temporales confiables.
+Implicación: Se puede aplicar validación temporal para evitar fugas.
 
-- Monitoreo:
-  - Logs de predicciones
-  - Detección de drift
-  - Ciclo de reentrenamiento
+4.5 Registro y Exportación a ONNX
 
----
+El modelo se registra con MLflow (tracking y registry) y se exporta a ONNX con skl2onnx.
 
-## 5. Implementación actual en el repositorio
+Justificación: ONNX permite ejecución ligera en CPU local y contenedores. MLflow soporta versionado y ciclo de vida de modelos.
+Suposición: La API de inferencia podrá cargar ONNXRuntime.
+Implicación: Se prioriza velocidad sobre arquitecturas muy complejas.
 
-- API FastAPI (`app/app.py`)
-- Modelo placeholder con reglas (`model/rules.py`)
-- Dockerfile para contenerización
-- GitHub Actions (CI/CD)
-- Pruebas unitarias (`tests/test_rules.py`)
+4.6 Servicio de Inferencia (FastAPI + Docker)
 
----
+El servicio descarga el modelo desde el bucket, ejecuta inferencia con ONNXRuntime y registra predicciones en archivos .txt.
 
-## 6. CHANGELOG — Propuesta inicial vs reestructurada
+Archivos de log:
+predicciones_dev.txt
+predicciones_prod.txt
 
-### Propuesta inicial (Semanas 1–2)
+Justificación: FastAPI permite validación de entrada, alta velocidad y documentación automática. Docker permite despliegue consistente.
+Suposición: El médico puede ejecutar Docker localmente.
+Implicación: La imagen debe ser liviana y sin dependencias innecesarias.
 
-- Descripción general sin detalle técnico profundo.
-- Mención del problema y tipos de datos.
-- Pipeline conceptual (diseño, desarrollo, producción).
+4.7 CI/CD y MLOps
 
-### Propuesta reestructurada (Semanas 5–6)
+GitHub Actions:
+Etapa de pruebas:
+Descarga del modelo ONNX
+Validación de inferencia
+Métrica mínima definida
+Etapa de build/promote:
+Construcción de imagen Docker
+Publicación en GHCR
+Despliegue automático a dev/prod
+Monitoreo continuo:
+Logs de predicciones
+Detección de drift
 
-- Detalle completo de:
-  - ingestión
-  - validación
-  - preprocesamiento
-  - modelado
-  - exportación ONNX
-  - despliegue
-  - CI/CD
-  - monitoreo y reentrenamiento
-- Tecnologías justificadas por etapa.
-- Integración explícita con proyecto final (dev/prod + modelos ONNX + buckets).
+Activación del pipeline de reentrenamiento
 
----
+Justificación: GitHub Actions es nativo al repositorio y simplifica automatización sin infraestructura extra.
+Suposición: El bucket y GHCR están correctamente autenticados.
+Implicación: Las credenciales deben administrarse por secretos.
 
-## 7. Estructura del repositorio
+5. Implementación Actual del Repositorio
 
-```
+API FastAPI: app/app.py
+Modelo placeholder basado en reglas: model/rules.py
+Dockerfile para ejecución en contenedor
+CI/CD con GitHub Actions
+Pruebas unitarias en tests/test_rules.py
+
+Workflows:
+pr-ci.yml (pruebas en PR)
+develop-cicd.yml (build y despliegue)
+
+6. CHANGELOG — Diferencias entre la Propuesta Inicial y la Reestructurada
+Propuesta inicial (Semanas 1–2):
+Explicación conceptual del problema.
+Pipeline general sin detalle técnico.
+No había especificación de tecnologías ni etapas MLOps formales.
+Propuesta reestructurada (Semanas 5–6):
+Descripción detallada de cada etapa del pipeline.
+Inclusión de suposiciones e implicaciones por etapa.
+Tecnologías justificadas explícitamente.
+
+CI/CD completamente definido.
+Monitoreo y reentrenamiento incluidos.
+Exportación ONNX y despliegue en contenedores contemplados.
+Integración directa con el código del repositorio.
+Inclusión del diagrama general solicitado.
+
+7. Estructura del Repositorio
+
 /mlops-rare-disease
 ├─ README.md
 ├─ pipeline.md
@@ -262,25 +222,24 @@ Métricas: ROC-AUC, F1, PR-AUC, recall para clases raras.
 ├─ .dockerignore
 ├─ requirements.txt
 ├─ app/
-│  └─ app.py
+│ └─ app.py
 ├─ model/
-│  └─ rules.py
+│ └─ rules.py
 ├─ tests/
-│  └─ test_rules.py
+│ └─ test_rules.py
 └─ .github/
-   └─ workflows/
-      ├─ pr-ci.yml
-      └─ develop-cicd.yml
-```
+└─ workflows/
+├─ pr-ci.yml
+└─ develop-cicd.yml
 
-## Documentación del pipeline y cambios
+8. Documentación del Pipeline y Cambios
 
-El pipeline completo y detallado del sistema se encuentra en **`pipeline.md`**, donde se describe el flujo end-to-end, las tecnologías usadas y las decisiones de diseño.
+El archivo pipeline.md contiene el detalle completo del flujo end-to-end, junto con elementos técnicos y decisiones de diseño.
+El archivo CHANGELOG.md resume los cambios entre la propuesta inicial y la reestructurada.
 
-Los cambios realizados respecto a la propuesta inicial están registrados en **`CHANGELOG.md`**, el cual resume las modificaciones, mejoras y justificaciones incorporadas durante la reestructuración del pipeline.
-
-## Referencias
-
+9. Referencias
+Documentación de GitHub Actions
+Documentación ONNX y ONNXRuntime
 - [Documentación de GitHub Actions](https://docs.github.com/en/actions)
 - [Exportación de Modelos a ONNX](https://onnx.ai/)
 
