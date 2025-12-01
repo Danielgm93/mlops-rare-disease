@@ -46,6 +46,56 @@ El pipeline MLOps propuesto debe permitir:
    - Versionado de **datos**, **modelos** y **código**.
    - Integración y despliegue continuo (**CI/CD** con GitHub Actions).
    - Monitoreo del servicio y del modelo, y ciclo de **reentrenamiento**.
+   - 
+4. CI/CD y GitHub Actions
+
+El pipeline de integración y despliegue continuo (CI/CD) está implementado usando **GitHub Actions** para garantizar que el código se pruebe automáticamente y se despliegue sin errores.
+
+Flujo de trabajo con GitHub Actions, el cual se ha configurado para automatizar las pruebas y el despliegue del proyecto:
+
+- Evento PR (Pull Request)**:
+   - Cuando se crea un pull request hacia la rama `main`, GitHub Actions ejecuta automáticamente pruebas unitarias para verificar que el código no rompa funcionalidades existentes. Este proceso está definido en el archivo de flujo de trabajo **`pr-ci.yml`** dentro de la carpeta **`.github/workflows/`**.
+   - Un mensaje automático como **"CI/CD en acción. Ejecutando tareas..."** se publica en el PR, lo que indica que el pipeline ha comenzado.
+
+- Evento Commit (Push)**:
+   - Cuando se hace un **commit** directamente a la rama `main`, se ejecutan las pruebas unitarias nuevamente para asegurarse de que el código sigue funcionando correctamente. Además, se construye una imagen Docker con la versión más reciente del modelo y se sube al **GitHub Container Registry (GHCR)**.
+   - Al final de este proceso, se publica el mensaje **"CI/CD terminado con éxito."** en el PR para indicar que el proceso ha terminado sin errores.
+
+- Archivos clave de GitHub Actions:
+
+- **pr-ci.yml**: Ejecuta las pruebas unitarias en cada PR.
+- **develop-cicd.yml**: Ejecuta las pruebas y despliega la imagen Docker a **GHCR**.
+
+Con esta integración, se asegura que cualquier cambio realizado en el código pase por un proceso de validación automático antes de ser fusionado en la rama principal.
+
+#### 1.4 Monitoreo y Reentrenamiento
+
+El monitoreo continuo es esencial para asegurar que el modelo de predicción siga siendo relevante con el tiempo. 
+
+1. **Monitoreo de Drift**:  
+   El modelo se monitorea para detectar **drift de datos**, lo que indica que la distribución de las predicciones ha cambiado debido a nuevos patrones en los datos.
+
+2. **Logging de Predicciones**:  
+   Todas las predicciones realizadas por el modelo se registran en archivos de texto (**`predicciones_dev.txt`**, **`predicciones_prod.txt`**), que se almacenan en un bucket externo. Estos logs ayudan a monitorear el desempeño del modelo a lo largo del tiempo y detectar cualquier irregularidad.
+
+3. **Ciclo de Reentrenamiento**:  
+   Si se detecta drift en el modelo o si los datos se actualizan significativamente, el modelo pasa por un proceso de **reentrenamiento**. Esto incluye:
+   - Recolectar los nuevos datos etiquetados.
+   - Reentrenar el modelo con estos datos.
+   - Validar que las métricas del modelo estén por encima de los umbrales definidos (por ejemplo, ROC-AUC > 0.85).
+   - Subir la nueva versión del modelo al bucket externo.
+
+ ##### 1.5 Tecnologías Usadas
+
+Este proyecto utiliza diversas tecnologías para cada etapa del pipeline, lo que permite construir un sistema robusto y escalable:
+
+- **FastAPI**: Para implementar la API de inferencia. Es rápido y eficiente para construir servicios web ligeros que se pueden ejecutar localmente o en la nube.
+- **Docker**: Se utiliza para contenerizar la API y permitir su ejecución en cualquier entorno, ya sea local o en un servidor/nube. Docker facilita el despliegue y la portabilidad del sistema.
+- **ONNX**: El modelo de predicción es exportado en formato **ONNX** para asegurar la compatibilidad con diferentes runtimes de inferencia.
+- **GitHub Actions**: Para la integración continua (CI) y el despliegue continuo (CD). Estas acciones automatizan las pruebas, construcción de Docker y despliegue de imágenes.
+- **Airflow**: Se usa para orquestar la ingesta de datos desde las Historias Clínicas Electrónicas (HCE/EHR) hacia el sistema, gestionando flujos batch de datos.
+
+Cada una de estas tecnologías ha sido elegida por su eficiencia, escalabilidad y capacidad de integración en un pipeline MLOps robusto.
 
 ---
 
@@ -228,4 +278,9 @@ Métricas: ROC-AUC, F1, PR-AUC, recall para clases raras.
 El pipeline completo y detallado del sistema se encuentra en **`pipeline.md`**, donde se describe el flujo end-to-end, las tecnologías usadas y las decisiones de diseño.
 
 Los cambios realizados respecto a la propuesta inicial están registrados en **`CHANGELOG.md`**, el cual resume las modificaciones, mejoras y justificaciones incorporadas durante la reestructuración del pipeline.
+
+## Referencias
+
+- [Documentación de GitHub Actions](https://docs.github.com/en/actions)
+- [Exportación de Modelos a ONNX](https://onnx.ai/)
 
