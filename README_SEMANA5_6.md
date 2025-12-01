@@ -2,7 +2,7 @@ Rare Disease Triage – Pipeline MLOps (Reestructuración Semanas 5–6)
 
 Autor: D. W
 Curso: MLOps – Semanas 5–6
-Repositorio: https://github.com/Danielgm93/mlops-rare-disease
+Repositorio: https://github.com/Danielgm93/Enfermedades-mlops-U2
 
 Este repositorio describe un pipeline MLOps end-to-end para un sistema de triage clínico que estima la probabilidad de que un paciente presente una enfermedad común o una enfermedad huérfana, a partir de síntomas y variables clínicas básicas. Esta propuesta corresponde a la reestructuración solicitada en las semanas 5–6 del curso.
 
